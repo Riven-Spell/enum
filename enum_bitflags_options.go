@@ -12,7 +12,7 @@ type BitflagParseOptions struct {
 	Separator *string
 }
 
-var defaultBitflagParseOptions = BitflagParseOptions{
+var GlobalDefaultBitflagParseOptions = BitflagParseOptions{
 	Separator: internal.Ptr(","),
 }
 
@@ -21,7 +21,7 @@ func (b *BitflagParseOptions) SetDefaults(impl genericBfEnumImpl) {
 	if getter, ok := impl.(DefaultBitflagParseOptionsGetter); ok {
 		defaults = getter.GetDefaultBitflagParseOptions()
 	} else {
-		defaults = defaultBitflagParseOptions
+		defaults = GlobalDefaultBitflagParseOptions
 	}
 
 	if b.Separator == nil {

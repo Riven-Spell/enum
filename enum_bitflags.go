@@ -12,12 +12,16 @@ type genericBfEnumImpl interface {
 	bfEnumImpl()
 }
 
+// BitflagEnumImpl implements the bitflag enumerator. Paired with BitflagImpl, it allows for a similar structure to EnumImpl.
+// To implement it, supply a uint "backing" type for the enum, a BitflagImpl "result" type, and the type encapsulating BitflagEnumImpl.
+// BitflagImpl is required to add a fmt.Stringer to satisfy BitflagEnumImpl.
 type BitflagEnumImpl[Raw internal.Flaggable, BfImpl genericBfImpl[Raw, Parent], Parent genericBfEnumImpl] struct {
 	valueNameCache map[Raw]string
 	nameValueCache map[string]Raw
 	typeName       string
 }
 
+// FromRawValue returns the result type from a raw uint. This may not necessarily be a real value in the bitflags, so check your work!
 func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) FromRawValue(val Raw) BfImpl {
 	out := BitflagImpl[Raw, BfImpl, Parent]{}.getParentZeroInstance()
 	ptr := getBitflagPtr(&out)
@@ -27,7 +31,6 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) FromRawValue(val Raw) BfImpl {
 	return out
 }
 
-//goland:noinspection ALL
 func (BitflagEnumImpl[Raw, BfImpl, Parent]) bfEnumImpl() { panic("do not call, used for contracting") }
 
 func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) generateCaches() {
@@ -47,6 +50,9 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) generateCaches() {
 	})
 }
 
+// String stringifies the target result type. If options are not provided, falls back to two options:
+// First, pulling them from DefaultBitflagParseOptionsGetter (if implemented on the parent struct)
+// Second, GlobalDefaultBitflagParseOptions.
 func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) String(t BfImpl, opts ...BitflagStringOptions) string {
 	e.generateCaches()
 
@@ -65,6 +71,9 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) String(t BfImpl, opts ...BitflagS
 	return strings.Join(results, *opt.Separator)
 }
 
+// Parse parses a string to the target result type. If options are not provided, falls back to two options:
+// First, pulling them from DefaultBitflagParseOptionsGetter (if implemented on the parent struct)
+// Second, GlobalDefaultBitflagParseOptions.
 func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) Parse(s string, opts ...BitflagStringOptions) (v BfImpl, err error) {
 	e.generateCaches()
 
@@ -119,6 +128,8 @@ func getBitflagPtr[F internal.Flaggable, Enum genericBfEnumImpl, Parent genericB
 	panic("could not find viable bitflag pointer (is BitflagImpl at the root of your struct?)")
 }
 
+// BitflagImpl is the companion type to BitflagEnumImpl. Both should be implemented together. Parameterization is the same.
+// BitflagImpl is required to add a fmt.Stringer to satisfy BitflagEnumImpl.
 type BitflagImpl[F internal.Flaggable, Parent genericBfImpl[F, Enum], Enum genericBfEnumImpl] struct {
 	value F
 }
@@ -131,10 +142,12 @@ func (b BitflagImpl[F, P, E]) getParentZeroInstance() (ret P) {
 	return
 }
 
+// Value returns the raw uint backing value.
 func (b BitflagImpl[F, P, E]) Value() F {
 	return b.value
 }
 
+// Add "adds" two or more bitflags together in a binary OR operation.
 func (b BitflagImpl[F, P, E]) Add(in ...P) P {
 	out := b.getParentZeroInstance()
 	bfPtr := getBitflagPtr(&out)
@@ -147,6 +160,7 @@ func (b BitflagImpl[F, P, E]) Add(in ...P) P {
 	return out
 }
 
+// Remove removes bitflags []in from the LHS bitflag and returns it, via bitwise AND + XOR of in.
 func (b BitflagImpl[F, P, E]) Remove(in ...P) P {
 	out := b.getParentZeroInstance()
 	bfPtr := getBitflagPtr(&out)
@@ -159,6 +173,7 @@ func (b BitflagImpl[F, P, E]) Remove(in ...P) P {
 	return out
 }
 
+// Contains returns whether or not a value exists in this bitflag.
 func (b BitflagImpl[F, P, E]) Contains(in ...P) bool {
 	for _, v := range in {
 		if (b.value)&v.Value() != v.Value() {

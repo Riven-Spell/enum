@@ -36,6 +36,7 @@ func (e *EnumImpl[Val, Enum]) generateCaches() {
 	e.nameValueCache, e.valueNameCache = generateCaches[Enum, Val, Val](noTransmute)
 }
 
+// String stringifies the input value.
 func (e *EnumImpl[Val, Enum]) String(t Val) string {
 	e.generateCaches()
 
@@ -44,6 +45,7 @@ func (e *EnumImpl[Val, Enum]) String(t Val) string {
 	return e.valueNameCache[t]
 }
 
+// Parse parses a string to the resulting enum value.
 func (e *EnumImpl[Val, Enum]) Parse(s string) (v Val, err error) {
 	e.generateCaches()
 
