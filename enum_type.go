@@ -2,54 +2,38 @@ package enum
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
-	"sync"
 )
 
-// EnumImpl should be embedded in a struct to treat it as an
-type EnumImpl[Val comparable, Enum any] struct {
-	cacheWriteOnce sync.Once
+// EnumVal adds a requirement that all values must be stringable.
+// Implement it by calling back to the EnumImpl.String(Val) function.
+type EnumVal interface {
+	comparable
+	fmt.Stringer
+}
 
+// EnumImpl should be embedded in a struct to treat it as an enum.
+// Append functions to the pointer (or copied) value of the struct returning Vals
+// in order to use.
+type EnumImpl[Val EnumVal, Enum any] struct {
 	valueNameCache map[Val]string
 	nameValueCache map[string]Val
 	typeName       string
 }
 
 func (e *EnumImpl[Val, Enum]) generateCaches() {
-	e.cacheWriteOnce.Do(func() {
-		// Make our maps first
-		e.valueNameCache = make(map[Val]string)
-		e.nameValueCache = make(map[string]Val)
+	globalRwLock.RLock() // grab a read lock, guarantee that the caches exist
+	if e.nameValueCache != nil && e.valueNameCache != nil {
+		globalRwLock.RUnlock()
+		return
+	}
+	globalRwLock.RUnlock()
 
-		// Collect reflected types of our enum and value, enumRaw and vValue
-		var enumRaw Enum
-		var valueRaw Val
-		eVal := reflect.ValueOf(enumRaw)
-		eType := reflect.TypeOf(enumRaw)
-		vType := reflect.TypeOf(valueRaw)
+	// if they do not exist, grab the write lock and create them
+	globalRwLock.Lock()
+	defer globalRwLock.Unlock()
 
-		// Step through the available methods on our enumeration type,
-		// and find all that match our target function signature
-		nMethods := eType.NumMethod()
-		for i := 0; i < nMethods; i++ {
-			// Get method[i] and it's type
-			method := eType.Method(i)
-			t := method.Type
-
-			// Match our signature
-			if !(t.NumIn() == 1 && t.NumOut() == 1 &&
-				t.In(0).AssignableTo(eType) && t.Out(0).AssignableTo(vType)) {
-				continue // One in (enum), one out (value
-			}
-
-			// put the name into our maps
-			n := method.Name
-			result := method.Func.Call([]reflect.Value{eVal})[0].Interface().(Val)
-			e.valueNameCache[result] = n
-			e.nameValueCache[strings.ToLower(n)] = result
-		}
-	})
+	e.nameValueCache, e.valueNameCache = generateCaches[Enum, Val, Val](noTransmute)
 }
 
 func (e *EnumImpl[Val, Enum]) String(t Val) string {
