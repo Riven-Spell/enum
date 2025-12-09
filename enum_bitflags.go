@@ -51,15 +51,15 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) generateCaches() {
 }
 
 // String stringifies the target result type. If options are not provided, falls back to two options:
-// First, pulling them from DefaultBitflagParseOptionsGetter (if implemented on the parent struct)
-// Second, GlobalDefaultBitflagParseOptions.
+// First, pulling them from DefaultBitflagStringOptionsGetter (if implemented on the parent struct)
+// Second, GlobalDefaultBitflagStringOptions.
 func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) String(t BfImpl, opts ...BitflagStringOptions) string {
 	e.generateCaches()
 
 	var pType Parent
 
 	opt := internal.FirstOrZero(opts)
-	opt.SetDefaults(pType)
+	opt.setDefaults(pType)
 
 	results := make([]string, 0)
 	for val, name := range e.valueNameCache {
@@ -72,15 +72,15 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) String(t BfImpl, opts ...BitflagS
 }
 
 // Parse parses a string to the target result type. If options are not provided, falls back to two options:
-// First, pulling them from DefaultBitflagParseOptionsGetter (if implemented on the parent struct)
-// Second, GlobalDefaultBitflagParseOptions.
+// First, pulling them from DefaultBitflagStringOptionsGetter (if implemented on the parent struct)
+// Second, GlobalDefaultBitflagStringOptions.
 func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) Parse(s string, opts ...BitflagStringOptions) (v BfImpl, err error) {
 	e.generateCaches()
 
 	var pType Parent
 
 	opt := internal.FirstOrZero(opts)
-	opt.SetDefaults(pType)
+	opt.setDefaults(pType)
 
 	v = BitflagImpl[Raw, BfImpl, Parent]{}.getParentZeroInstance()
 	bfPtr := getBitflagPtr(&v)

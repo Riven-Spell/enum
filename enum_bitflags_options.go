@@ -4,49 +4,27 @@ import (
 	"github.com/Riven-Spell/enum/internal"
 )
 
-type DefaultBitflagParseOptionsGetter interface {
-	GetDefaultBitflagParseOptions() BitflagParseOptions
-}
-
-type BitflagParseOptions struct {
-	Separator *string
-}
-
-var GlobalDefaultBitflagParseOptions = BitflagParseOptions{
-	Separator: internal.Ptr(","),
-}
-
-func (b *BitflagParseOptions) SetDefaults(impl genericBfEnumImpl) {
-	var defaults BitflagParseOptions
-	if getter, ok := impl.(DefaultBitflagParseOptionsGetter); ok {
-		defaults = getter.GetDefaultBitflagParseOptions()
-	} else {
-		defaults = GlobalDefaultBitflagParseOptions
-	}
-
-	if b.Separator == nil {
-		b.Separator = defaults.Separator
-	}
-}
-
+// DefaultBitflagStringOptionsGetter can be implemented atop a struct including BitflagEnumImpl to provide default options for stringifying and parsing.
 type DefaultBitflagStringOptionsGetter interface {
 	GetDefaultBitflagStringOptions() BitflagStringOptions
 }
 
+// BitflagStringOptions specifies how bitflag strings should be formed.
 type BitflagStringOptions struct {
 	Separator *string
 }
 
-var defaultBitflagStringOptions = BitflagStringOptions{
+// GlobalDefaultBitflagStringOptions is the last fall-back option if no options are provided, and no default getter exists.
+var GlobalDefaultBitflagStringOptions = BitflagStringOptions{
 	Separator: internal.Ptr(","),
 }
 
-func (b *BitflagStringOptions) SetDefaults(impl genericBfEnumImpl) {
+func (b *BitflagStringOptions) setDefaults(impl genericBfEnumImpl) {
 	var defaults BitflagStringOptions
 	if getter, ok := impl.(DefaultBitflagStringOptionsGetter); ok {
 		defaults = getter.GetDefaultBitflagStringOptions()
 	} else {
-		defaults = defaultBitflagStringOptions
+		defaults = GlobalDefaultBitflagStringOptions
 	}
 
 	if b.Separator == nil {
