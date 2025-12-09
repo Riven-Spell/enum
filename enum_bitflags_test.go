@@ -37,6 +37,10 @@ type TestBitflag struct {
 	enum.BitflagImpl[uint16, TestBitflag, eTestBitflag]
 }
 
+func (t TestBitflag) String() string {
+	return ETestBitFlag.String(t)
+}
+
 func TestBitflagImpl(t *testing.T) {
 	a := assert.New(t)
 
@@ -56,4 +60,5 @@ func TestBitflagImpl(t *testing.T) {
 	a.NoError(err)
 	a.Equal(fooBaz.Value(), parsed.Value())
 	a.True(strings.Contains(fooBaz.String(), "|"))
+	a.True(strings.Contains(ETestBitFlag.String(fooBaz), "|"))
 }

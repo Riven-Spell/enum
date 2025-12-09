@@ -12,11 +12,6 @@ type genericBfEnumImpl interface {
 	bfEnumImpl()
 }
 
-type bfStringParseIf[Raw internal.Flaggable, BfImpl genericBfImpl[Raw, Parent], Parent genericBfEnumImpl] interface {
-	String(BfImpl, ...BitflagStringOptions) string
-	Parse(s string, opts ...BitflagStringOptions) (v BfImpl, err error)
-}
-
 type BitflagEnumImpl[Raw internal.Flaggable, BfImpl genericBfImpl[Raw, Parent], Parent genericBfEnumImpl] struct {
 	valueNameCache map[Raw]string
 	nameValueCache map[string]Raw
@@ -24,9 +19,7 @@ type BitflagEnumImpl[Raw internal.Flaggable, BfImpl genericBfImpl[Raw, Parent], 
 }
 
 func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) FromRawValue(val Raw) BfImpl {
-	out := BitflagImpl[Raw, BfImpl, Parent]{
-		parent: e,
-	}.getParentZeroInstance()
+	out := BitflagImpl[Raw, BfImpl, Parent]{}.getParentZeroInstance()
 	ptr := getBitflagPtr(&out)
 
 	ptr.value = val
@@ -80,9 +73,7 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) Parse(s string, opts ...BitflagSt
 	opt := internal.FirstOrZero(opts)
 	opt.SetDefaults(pType)
 
-	v = BitflagImpl[Raw, BfImpl, Parent]{
-		parent: e,
-	}.getParentZeroInstance()
+	v = BitflagImpl[Raw, BfImpl, Parent]{}.getParentZeroInstance()
 	bfPtr := getBitflagPtr(&v)
 
 	entriesRaw := strings.Split(s, *opt.Separator)
@@ -108,6 +99,8 @@ type genericBfImpl[F internal.Flaggable, E genericBfEnumImpl] interface {
 	enum() E
 
 	Value() F
+
+	fmt.Stringer
 }
 
 func getBitflagPtr[F internal.Flaggable, Enum genericBfEnumImpl, Parent genericBfImpl[F, Enum]](tgt *Parent) (out *BitflagImpl[F, Parent, Enum]) {
@@ -127,8 +120,7 @@ func getBitflagPtr[F internal.Flaggable, Enum genericBfEnumImpl, Parent genericB
 }
 
 type BitflagImpl[F internal.Flaggable, Parent genericBfImpl[F, Enum], Enum genericBfEnumImpl] struct {
-	parent bfStringParseIf[F, Parent, Enum]
-	value  F
+	value F
 }
 
 func (b BitflagImpl[F, P, E]) bfImpl() { panic("do not call, used for contracting") }
@@ -136,9 +128,6 @@ func (b BitflagImpl[F, P, E]) bfImpl() { panic("do not call, used for contractin
 func (b BitflagImpl[F, P, E]) enum() E { panic("do not call, used for type inference") }
 
 func (b BitflagImpl[F, P, E]) getParentZeroInstance() (ret P) {
-	bfPtr := getBitflagPtr(&ret)
-	bfPtr.parent = b.parent
-
 	return
 }
 
@@ -178,16 +167,4 @@ func (b BitflagImpl[F, P, E]) Contains(in ...P) bool {
 	}
 
 	return true
-}
-
-func (b BitflagImpl[F, P, E]) String() string {
-	// We have no way of getting the actual parent instance
-	// of this BitflagImpl, so, we must make one for ourselves and
-	// feed it to the enum implementation
-	tgt := b.getParentZeroInstance()
-	ptr := getBitflagPtr(&tgt)
-
-	*ptr = b
-
-	return b.parent.String(tgt)
 }

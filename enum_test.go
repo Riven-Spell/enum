@@ -19,11 +19,6 @@ func (t TestInt) String() string {
 	return ETestInt.String(t)
 }
 
-func (t *TestInt) Parse(s string) (err error) {
-	*t, err = ETestInt.Parse(s)
-	return
-}
-
 func (eTestInt) Foo() TestInt {
 	return 1
 }
