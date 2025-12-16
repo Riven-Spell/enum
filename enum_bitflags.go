@@ -45,53 +45,61 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) generateCaches() {
 	globalRwLock.Lock()
 	defer globalRwLock.Unlock()
 
+	// Ensure we have options.
+	err := ConfigureBitflagStringOptions(bfDefaultStringOptions)
+	if err != nil {
+		panic("invalid default options, this should never happen")
+	}
+
 	e.nameValueCache, e.valueNameCache = generateCaches[Parent, BfImpl, Raw](func(impl BfImpl) Raw {
 		return impl.Value()
-	})
+	}, bfStringOptions.CaseInsensitive)
+
+	if noneName, ok := e.valueNameCache[0]; !ok {
+		noneName = "None"
+		e.nameValueCache[noneName] = 0
+		e.valueNameCache[0] = noneName
+	}
 }
 
-// String stringifies the target result type. If options are not provided, falls back to two options:
-// First, pulling them from DefaultBitflagStringOptionsGetter (if implemented on the parent struct)
-// Second, GlobalDefaultBitflagStringOptions.
-func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) String(t BfImpl, opts ...BitflagStringOptions) string {
+// String stringifies the target result type, using options set by ConfigureBitflagStringOptions.
+func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) String(t BfImpl) string {
 	e.generateCaches()
-
-	var pType Parent
-
-	opt := internal.FirstOrZero(opts)
-	opt.setDefaults(pType)
 
 	results := make([]string, 0)
 	for val, name := range e.valueNameCache {
+		if val == 0 {
+			continue // don't stringify zero until the end
+		}
+
 		if (t.Value() & val) == val {
 			results = append(results, name)
 		}
 	}
 
-	return strings.Join(results, *opt.Separator)
+	if len(results) == 0 { // If we have nothing, insert the zero value's name.
+		results = append(results, e.valueNameCache[0])
+	}
+
+	return strings.Join(results, bfStringOptions.Separator)
 }
 
 // Parse parses a string to the target result type. If options are not provided, falls back to two options:
 // First, pulling them from DefaultBitflagStringOptionsGetter (if implemented on the parent struct)
 // Second, GlobalDefaultBitflagStringOptions.
-func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) Parse(s string, opts ...BitflagStringOptions) (v BfImpl, err error) {
+func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) Parse(s string, strict bool) (v BfImpl, err error) {
 	e.generateCaches()
-
-	var pType Parent
-
-	opt := internal.FirstOrZero(opts)
-	opt.setDefaults(pType)
 
 	v = BitflagImpl[Raw, BfImpl, Parent]{}.getParentZeroInstance()
 	bfPtr := getBitflagPtr(&v)
 
-	entriesRaw := strings.Split(s, *opt.Separator)
+	entriesRaw := strings.Split(s, bfDefaultStringOptions.Separator)
 	for _, raw := range entriesRaw {
 		raw = strings.TrimSpace(raw)
 		raw = strings.ToLower(raw)
 
 		toAdd, ok := e.nameValueCache[raw]
-		if !ok {
+		if !ok && strict {
 			err = fmt.Errorf("could not associate input `%s` with a value", s)
 			return
 		}

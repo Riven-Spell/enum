@@ -33,7 +33,13 @@ func (e *EnumImpl[Val, Enum]) generateCaches() {
 	globalRwLock.Lock()
 	defer globalRwLock.Unlock()
 
-	e.nameValueCache, e.valueNameCache = generateCaches[Enum, Val, Val](noTransmute)
+	// ensure we have options
+	err := ConfigureEnumStringOptions(enumDefaultStringOptions)
+	if err != nil {
+		panic("enum default options should be sufficient")
+	}
+
+	e.nameValueCache, e.valueNameCache = generateCaches[Enum, Val, Val](noTransmute, enumStringOptions.CaseInsensitive)
 }
 
 // String stringifies the input value.
@@ -46,7 +52,7 @@ func (e *EnumImpl[Val, Enum]) String(t Val) string {
 }
 
 // Parse parses a string to the resulting enum value.
-func (e *EnumImpl[Val, Enum]) Parse(s string) (v Val, err error) {
+func (e *EnumImpl[Val, Enum]) Parse(s string, strict bool) (v Val, err error) {
 	e.generateCaches()
 
 	// Lowercase our input first
@@ -55,7 +61,7 @@ func (e *EnumImpl[Val, Enum]) Parse(s string) (v Val, err error) {
 	// Compare against the name value cache
 	var ok bool
 	v, ok = e.nameValueCache[lowerInput]
-	if !ok {
+	if !ok && strict {
 		err = fmt.Errorf("could not associate input `%s` with a value", s)
 		return
 	}

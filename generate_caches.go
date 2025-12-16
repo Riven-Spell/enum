@@ -9,7 +9,7 @@ func noTransmute[T comparable](in T) T {
 	return in
 }
 
-func generateCaches[Enum any, Interim any, Result comparable](transmuter func(Interim) Result) (nvCache map[string]Result, vnCache map[Result]string) {
+func generateCaches[Enum any, Interim any, Result comparable](transmuter func(Interim) Result, caseInsensitive bool) (nvCache map[string]Result, vnCache map[Result]string) {
 	// Make our maps first
 	vnCache = make(map[Result]string)
 	nvCache = make(map[string]Result)
@@ -50,7 +50,11 @@ func generateCaches[Enum any, Interim any, Result comparable](transmuter func(In
 			interim := method.Func.Call([]reflect.Value{v.Target})[0].Interface().(Interim)
 			result := transmuter(interim)
 			vnCache[result] = n
-			nvCache[strings.ToLower(n)] = result
+
+			if caseInsensitive {
+				n = strings.ToLower(n)
+			}
+			nvCache[n] = result
 		}
 	}
 

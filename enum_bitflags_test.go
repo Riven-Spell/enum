@@ -61,4 +61,21 @@ func TestBitflagImpl(t *testing.T) {
 	a.Equal(fooBaz.Value(), parsed.Value())
 	a.True(strings.Contains(fooBaz.String(), "|"))
 	a.True(strings.Contains(ETestBitFlag.String(fooBaz), "|"))
+
+	a.Equal(foo, foo)
+	a.NotEqual(foo, bar)
+	a.True(foo == foo)
+	a.False(foo == bar)
+
+	switch foo.Add(baz) {
+	case baz:
+		a.Fail("triggered baz")
+	case foo:
+		a.Fail("triggered foo")
+	case bar:
+		a.Fail("triggered bar")
+	case foo.Add(baz):
+	default:
+		a.Fail("defaulted")
+	}
 }

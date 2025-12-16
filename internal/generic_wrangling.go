@@ -14,3 +14,12 @@ func FirstOrZero[T any](values []T) T {
 func Ptr[T any](in T) *T {
 	return &in
 }
+
+func ClonePtr[T any](in *T) *T {
+	if in == nil {
+		return nil
+	}
+
+	out := *in
+	return &out
+}

@@ -1,33 +1,65 @@
 package enum
 
 import (
-	"github.com/Riven-Spell/enum/internal"
+	"errors"
+	"strings"
+	"sync"
 )
 
-// DefaultBitflagStringOptionsGetter can be implemented atop a struct including BitflagEnumImpl to provide default options for stringifying and parsing.
-type DefaultBitflagStringOptionsGetter interface {
-	GetDefaultBitflagStringOptions() BitflagStringOptions
-}
+/*
+Why only allow a single set ever?
 
-// BitflagStringOptions specifies how bitflag strings should be formed.
+A) If caches are already generated, adjusting case sensitivity would require their regeneration.
+B) It would be extremely annoying if a dependency were to change the semantics of enumeration.
+C) It reduces any weird semantics of "how do we get options reliably?" to a contract set at library init.
+*/
+
+// BitflagStringOptions defines the set of options available for configuring bitflags
 type BitflagStringOptions struct {
-	Separator *string
+	// Separator determines the text that divides bitflag strings (i.e. Foo,Bar or Foo|Bar)
+	Separator string
+	// CaseInsensitive is relevant only in parsing; stringification will always result in the function name.
+	CaseInsensitive bool
 }
 
-// GlobalDefaultBitflagStringOptions is the last fall-back option if no options are provided, and no default getter exists.
-var GlobalDefaultBitflagStringOptions = BitflagStringOptions{
-	Separator: internal.Ptr(","),
+const (
+	// DefaultBitflagSeparator defines the bitflag separator if ConfigureBitflagStringOptions is never called.
+	DefaultBitflagSeparator = ","
+	// DefaultBitflagCaseSens defines the case sensitivity (false = insensitive) if ConfigureBitflagStringOptions is never called.
+	DefaultBitflagCaseSens = false
+)
+
+var bfStringOptionsConfigureOnce = &sync.Once{}
+var bfStringOptions *BitflagStringOptions
+
+var bfDefaultStringOptions = BitflagStringOptions{
+	Separator:       DefaultBitflagSeparator,
+	CaseInsensitive: DefaultBitflagCaseSens,
 }
 
-func (b *BitflagStringOptions) setDefaults(impl genericBfEnumImpl) {
-	var defaults BitflagStringOptions
-	if getter, ok := impl.(DefaultBitflagStringOptionsGetter); ok {
-		defaults = getter.GetDefaultBitflagStringOptions()
-	} else {
-		defaults = GlobalDefaultBitflagStringOptions
+// ConfigureBitflagStringOptions permanently configures the bitflag string options.
+// This should only ever be called
+// a) intentionally, by the `main` package
+// b) as a side effect of generateCaches.
+// Middleware should never call this function.
+func ConfigureBitflagStringOptions(cfg BitflagStringOptions) error {
+	if strings.TrimSpace(cfg.Separator) == "" {
+		return errors.New("separator cannot be empty")
 	}
 
-	if b.Separator == nil {
-		b.Separator = defaults.Separator
+	bfStringOptionsConfigureOnce.Do(func() {
+		bfStringOptions = &cfg
+	})
+
+	return nil
+}
+
+// GetBitflagStringOptions reads out the current bitflag string options.
+func GetBitflagStringOptions() BitflagStringOptions {
+	err := ConfigureBitflagStringOptions(bfDefaultStringOptions)
+	if err != nil {
+		panic("invalid default string options")
 	}
+
+	return *bfStringOptions
 }
