@@ -64,12 +64,6 @@ type eTestBitflag struct {
 	enum.BitflagEnumImpl[uint16, TestBitflag, eTestBitflag]
 }
 
-func (e eTestBitflag) GetDefaultBitflagStringOptions() enum.BitflagStringOptions {
-	return enum.BitflagStringOptions{
-		Separator: internal.Ptr("|"),
-	}
-}
-
 var ETestBitFlag = eTestBitflag{}
 
 func (e eTestBitflag) Foo() TestBitflag {

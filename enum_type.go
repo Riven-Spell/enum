@@ -33,13 +33,7 @@ func (e *EnumImpl[Val, Enum]) generateCaches() {
 	globalRwLock.Lock()
 	defer globalRwLock.Unlock()
 
-	// ensure we have options
-	err := ConfigureEnumStringOptions(enumDefaultStringOptions)
-	if err != nil {
-		panic("enum default options should be sufficient")
-	}
-
-	e.nameValueCache, e.valueNameCache = generateCaches[Enum, Val, Val](noTransmute, enumStringOptions.CaseInsensitive)
+	e.nameValueCache, e.valueNameCache = generateCaches[Enum, Val, Val](noTransmute)
 }
 
 // String stringifies the input value.

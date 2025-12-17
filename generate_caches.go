@@ -9,7 +9,7 @@ func noTransmute[T comparable](in T) T {
 	return in
 }
 
-func generateCaches[Enum any, Interim any, Result comparable](transmuter func(Interim) Result, caseInsensitive bool) (nvCache map[string]Result, vnCache map[Result]string) {
+func generateCaches[Enum any, Interim any, Result comparable](transmuter func(Interim) Result) (nvCache map[string]Result, vnCache map[Result]string) {
 	// Make our maps first
 	vnCache = make(map[Result]string)
 	nvCache = make(map[string]Result)
@@ -51,9 +51,9 @@ func generateCaches[Enum any, Interim any, Result comparable](transmuter func(In
 			result := transmuter(interim)
 			vnCache[result] = n
 
-			if caseInsensitive {
-				n = strings.ToLower(n)
-			}
+			// Case-sensitivity for enum/bitflag stringification/parsing makes sense in zero scenarios.
+			// Golang has some rules about capitalization already, and these ants aren't worth fucking.
+			n = strings.ToLower(n)
 			nvCache[n] = result
 		}
 	}

@@ -45,15 +45,9 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) generateCaches() {
 	globalRwLock.Lock()
 	defer globalRwLock.Unlock()
 
-	// Ensure we have options.
-	err := ConfigureBitflagStringOptions(bfDefaultStringOptions)
-	if err != nil {
-		panic("invalid default options, this should never happen")
-	}
-
 	e.nameValueCache, e.valueNameCache = generateCaches[Parent, BfImpl, Raw](func(impl BfImpl) Raw {
 		return impl.Value()
-	}, bfStringOptions.CaseInsensitive)
+	})
 
 	if noneName, ok := e.valueNameCache[0]; !ok {
 		noneName = "None"
@@ -61,6 +55,10 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) generateCaches() {
 		e.valueNameCache[0] = noneName
 	}
 }
+
+// BitflagSeparatorString defines the default separator string.
+// Changing this will only lead to headaches, so it is a const.
+const BitflagSeparatorString = ","
 
 // String stringifies the target result type, using options set by ConfigureBitflagStringOptions.
 func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) String(t BfImpl) string {
@@ -81,7 +79,7 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) String(t BfImpl) string {
 		results = append(results, e.valueNameCache[0])
 	}
 
-	return strings.Join(results, bfStringOptions.Separator)
+	return strings.Join(results, BitflagSeparatorString)
 }
 
 // Parse parses a string to the target result type. If options are not provided, falls back to two options:
@@ -93,7 +91,7 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) Parse(s string, strict bool) (v B
 	v = BitflagImpl[Raw, BfImpl, Parent]{}.getParentZeroInstance()
 	bfPtr := getBitflagPtr(&v)
 
-	entriesRaw := strings.Split(s, bfDefaultStringOptions.Separator)
+	entriesRaw := strings.Split(s, BitflagSeparatorString)
 	for _, raw := range entriesRaw {
 		raw = strings.TrimSpace(raw)
 		raw = strings.ToLower(raw)
@@ -108,6 +106,23 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) Parse(s string, strict bool) (v B
 	}
 
 	return
+}
+
+func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) Split(in BfImpl) []BfImpl {
+	e.generateCaches()
+
+	out := make([]BfImpl, 0)
+	inVal := in.Value()
+
+	for val, _ := range e.valueNameCache {
+		if inVal&val == val {
+			var toAdd BfImpl
+			getBitflagPtr(&toAdd).value = val
+			out = append(out, toAdd)
+		}
+	}
+
+	return out
 }
 
 type genericBfImpl[F internal.Flaggable, E genericBfEnumImpl] interface {

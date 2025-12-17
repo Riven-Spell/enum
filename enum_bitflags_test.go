@@ -1,22 +1,14 @@
-package enum_test
+package enum
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/Riven-Spell/enum"
-	"github.com/Riven-Spell/enum/internal"
 	"github.com/stretchr/testify/assert"
 )
 
 type eTestBitflag struct {
-	enum.BitflagEnumImpl[uint16, TestBitflag, eTestBitflag]
-}
-
-func (e eTestBitflag) GetDefaultBitflagStringOptions() enum.BitflagStringOptions {
-	return enum.BitflagStringOptions{
-		Separator: internal.Ptr("|"),
-	}
+	BitflagEnumImpl[uint16, TestBitflag, eTestBitflag]
 }
 
 var ETestBitFlag = eTestBitflag{}
@@ -34,7 +26,7 @@ func (e eTestBitflag) Baz() TestBitflag {
 }
 
 type TestBitflag struct {
-	enum.BitflagImpl[uint16, TestBitflag, eTestBitflag]
+	BitflagImpl[uint16, TestBitflag, eTestBitflag]
 }
 
 func (t TestBitflag) String() string {
@@ -56,11 +48,11 @@ func TestBitflagImpl(t *testing.T) {
 	a.False(fooBaz.Add(bar).Remove(baz).Contains(baz))
 	a.True(fooBaz.Add(bar).Remove(baz).Contains(bar))
 
-	parsed, err := ETestBitFlag.Parse(ETestBitFlag.String(fooBaz))
+	parsed, err := ETestBitFlag.Parse(ETestBitFlag.String(fooBaz), true)
 	a.NoError(err)
 	a.Equal(fooBaz.Value(), parsed.Value())
-	a.True(strings.Contains(fooBaz.String(), "|"))
-	a.True(strings.Contains(ETestBitFlag.String(fooBaz), "|"))
+	a.True(strings.Contains(fooBaz.String(), ","))
+	a.True(strings.Contains(ETestBitFlag.String(fooBaz), ","))
 
 	a.Equal(foo, foo)
 	a.NotEqual(foo, bar)
