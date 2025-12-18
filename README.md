@@ -1,5 +1,8 @@
 # enum
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/Riven-Spell/enum/v2.svg)](https://pkg.go.dev/github.com/Riven-Spell/enum/v2) ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/Riven-Spell/enum)
+
+
 Yet another Golang enum implementation. Follows a pattern I developed in the course of work.
 
 ## Using a standard `EnumImpl`
