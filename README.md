@@ -10,7 +10,7 @@ The two type parameters are the result type of the enum, and the parent struct i
 package foobar
 
 import (
-	"github.com/Riven-Spell/enum"
+	"github.com/Riven-Spell/enum/v2"
 )
 
 // Define our enum in a non-exported type
@@ -57,7 +57,7 @@ If you need the byte-for-byte value for whatever reason, `BitflagImpl` exports `
 package foobar
 
 import (
-	"github.com/Riven-Spell/enum"
+	"github.com/Riven-Spell/enum/v2"
 )
 
 type eTestBitflag struct {

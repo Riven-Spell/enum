@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/Riven-Spell/enum/internal"
+	"github.com/Riven-Spell/enum/v2/internal"
 )
 
 type genericBfEnumImpl interface {

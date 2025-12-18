@@ -1,4 +1,4 @@
-module github.com/Riven-Spell/enum
+module github.com/Riven-Spell/enum/v2
 
 go 1.24.0
 
