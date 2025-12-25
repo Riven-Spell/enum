@@ -2,6 +2,7 @@ package enum
 
 import (
 	"fmt"
+	"github.com/Riven-Spell/generic/enumerable"
 	"strings"
 )
 
@@ -61,4 +62,12 @@ func (e *EnumImpl[Val, Enum]) Parse(s string, strict bool) (v Val, err error) {
 	}
 
 	return
+}
+
+func (e *EnumImpl[Val, Enum]) Values() []Val {
+	e.generateCaches()
+
+	return enumerable.Collect(enumerable.Map(enumerable.FromMap(e.valueNameCache), func(i enumerable.AB[Val, string]) Val {
+		return i.A
+	}))
 }

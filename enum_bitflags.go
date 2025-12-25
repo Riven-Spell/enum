@@ -2,6 +2,7 @@ package enum
 
 import (
 	"fmt"
+	"github.com/Riven-Spell/generic/enumerable"
 	"reflect"
 	"strings"
 
@@ -123,6 +124,14 @@ func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) Split(in BfImpl) []BfImpl {
 	}
 
 	return out
+}
+
+func (e *BitflagEnumImpl[Raw, BfImpl, Parent]) Values() []BfImpl {
+	e.generateCaches()
+
+	return enumerable.Collect(enumerable.Map(enumerable.FromMap(e.valueNameCache), func(i enumerable.AB[Raw, string]) BfImpl {
+		return e.FromRawValue(i.A)
+	}))
 }
 
 type genericBfImpl[F internal.Flaggable, E genericBfEnumImpl] interface {
